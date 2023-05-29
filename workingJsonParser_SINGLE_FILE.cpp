@@ -16,6 +16,12 @@ using std::ifstream;
 using std::stringstream;
 //using std::cerr;
 
+
+
+/*!
+ * @brief
+ * This class is used to represent key-value pairs in the Json's general structure
+* */
 class KeyValuePair {
 protected:
     string key;
@@ -24,27 +30,58 @@ protected:
 public:
     
     KeyValuePair() = default;
+
+    /*!
+     * @brief
+     * parameterized constructor for the KeyValuePair class
+     * 
+     *  
+     * */
     KeyValuePair(const string key, const string value) {
         this->key = key;
         this->value = value;
     }
     
+
+    /*!
+    * \brief
+     * method to set value of key field
+     * */
     void SetKey(const string key) {
         this->key = key;
     }
     
+    /*!
+    *\brief
+     * method to set value of value field
+     * */
     void SetValue(const string value) {
         this->value = value;
     }
-    
+
+
+
+    /*!
+    *\brief 
+     * method to get value of key field
+     * */
     string GetKey() const {
         return this->key;
     }
-    
+        /*!
+    *\brief
+     * method to get value of value field
+     * */
     string GetValue() const {
         return this->value;
     }
     
+    /*!
+    *\brief
+     * predefinition of operator= in order
+     * to be able to initialize one KeyValuePair to another directly
+     * by using "="
+     * */
     KeyValuePair operator =(const KeyValuePair pair) {
         SetKey(pair.GetKey());
         SetValue(pair.GetValue());
@@ -53,6 +90,11 @@ public:
     }
 };
 
+
+    /*!
+    *\brief
+    * This class is used to represent an Array in the JSON's structure.
+    * */
 class Array {
     
 protected:
@@ -60,32 +102,68 @@ protected:
     vector<string> elements;
 public:
     
+
     Array() = default;
+
+        /*!
+        *\brief 
+     * parameterized constructor for the Array class
+     * */
     Array(const string name, const vector<string> elements) {
         this->name = name;
         this->elements = elements;
     }
     
+
+        /*!
+        *\brief 
+     * method to set value of name field
+     * */
     void SetName(const string name) {
         this->name = name;
     }
     
+        /*!
+        *\brief 
+     * method to set the value of protected member array<string> elements (this->elements)
+     * */
     void SetElements(const vector<string> elements) {
         this->elements = elements;
     }
-    
+
+
+        /*!
+        *\brief 
+     * method to return the name of the Array object
+     * */
     string getName() const {
         return this->name;
     }
     
+        /*!
+        *\brief 
+     * method to get elements of the protected member attribute vector<string> elements (this->elements)
+     * */
     vector<string> getElements() const {
         return this->elements;
     }
-    
+
+
+        /*!
+        *\brief 
+     * method to add an element to the array of vector<string> 
+     * */
     void AddElement(const string element) {
         this->elements.push_back(element);
     }
     
+
+        /*!
+        *\brief 
+     * method that sets the value of the vector<string> member attribute of
+     * the Array class at a specific index
+     * by given value 
+     * */
     void SetArrayKVPValue(int index, string value) {
         this->elements[index] = value;
     }
@@ -98,39 +176,99 @@ protected:
     
 public:
     JsonObject() = default;
+
+        /*!
+        *\brief 
+     * parameterized constructor
+     * */
     JsonObject(const string name, const vector<KeyValuePair> KVPJsonPairs) {
         this->name = name;
         this->KVPJsonPairs = KVPJsonPairs;
     }
     
+
+        /*!
+        *\brief 
+     * assigns a string to the name member attribute of the JsonObject class
+     * */
     void SetName(const string name) {
         this->name = name;
     }
     
+        /*!
+        *\brief 
+     * returns the name attribute 
+     * */
     string getName() const {
         return this->name;
     }
     
+        /*!
+        *\brief 
+     * returns all vector<KVP> of the JsonObject class
+     * */
     vector<KeyValuePair> getKVPJsonPairs() {
         return this->KVPJsonPairs;
     }
     
+
+        /*!
+        *\brief 
+     * method that adds an element to the vector<KVP> of the JsonObject class
+     * */
     void AddKeyValuePair(const KeyValuePair kvp) {
         this->KVPJsonPairs.push_back(kvp);
     }
     
+        /*!
+        *\brief 
+     * method to set the value of vector<KVP> of the JsonObject class at a specific index
+     * */
     void SetVectKVPValue(int index, string value) {
         this->KVPJsonPairs[index].SetValue(value);
     }
 };
 
+
+    /*!
+    *\brief 
+     * The main class of the program that stores all the Json
+     * data and manipulates it as given in the requirements 
+     * provided. 
+     * */
 class JsonInfo : public JsonObject, KeyValuePair, Array {
 private:
+
+        /*!
+        *\brief 
+     * stores the name of the file
+     * */
     string fileName;
+
+        /*!
+        *\brief 
+     * stores all KVPs that represent Key-Value Pairs in the Json's structure
+     * */
     vector<KeyValuePair> keyValues;
+
+        /*!
+        *\brief 
+     * stores all JsonObjects that represent objects in the Json's structure
+     * */
     vector<JsonObject> objectValues;
+            /*!
+            *\brief 
+     * stores all Arrays that represent arrays in the Json's structure
+     * */
     vector<Array> arrays;
     
+
+            /*!
+            *\brief 
+     * helper function to split a string in a array<string> by a given delimeter
+     * and then return the vector<string> containing all parts of the string 
+     * split by the given delimeter
+     * */
     vector<string> splitString(const string& str, char delimiter) {
         vector<string> tokens;
         std::istringstream iss(str);
@@ -142,6 +280,11 @@ private:
         
         return tokens;
     }
+
+                /*!
+                *\brief 
+     * Checks if the given string is a valid path to a valid "Array" in the Json's structure
+     * */
     bool isArrayPath(JsonInfo& object, string path) {
         char delimeter = '/';
         vector<string> data = splitString(path, delimeter);
@@ -152,6 +295,10 @@ private:
         return false;
     }
     
+                    /*!
+                    *\brief 
+     * Checks if the given string is a valid path to a valid "JsonObject" in the Json's structure
+     * */
     bool isJsonObjectPath(JsonInfo& object, string path) {
         char delimeter = '/';
         vector<string> data = splitString(path, delimeter);
@@ -162,10 +309,18 @@ private:
         return false;
     }
     
+                    /*!
+                    *\brief 
+     * Inserts the given KVP into the filestream 
+     * */
     void serializeDefaultKeyValuePair(std::ofstream& fileStream, const KeyValuePair& kvp) {
         fileStream << "\"" << kvp.GetKey() << "\": \"" << kvp.GetValue() << ",";
     }
     
+                    /*!
+                    *\brief 
+     * Inserts the given KVP that represents a KVP in a JsonObject into the filestream
+     * */
     void serializeKeyValuePairInJsonObject(std::ofstream& fileStream, const KeyValuePair& kvp, bool isLast) {
         if (!isLast)
             fileStream << "\"" << kvp.GetKey() << "\": \"" << kvp.GetValue() << "\",";
@@ -174,6 +329,10 @@ private:
 
     }
 
+                    /*!
+                    *\brief 
+     * Inserts the array into the filestream 
+     * */
     void serializeArray(std::ofstream& fileStream, const Array& arr, bool isLast) {
         bool isKey = true;
         
@@ -203,6 +362,10 @@ private:
             fileStream << "],";
     }
 
+                        /*!
+                        *\brief 
+     * Inserts JsonObject into the filestream (by using the serializeKeyValuePairInJsonObject method)
+     * */
     void serializeJsonObject(std::ofstream& fileStream, JsonObject& obj) {
         bool isLast = false;
         fileStream << "\"" << obj.getName() << "\": {";
@@ -219,10 +382,18 @@ private:
         fileStream << "},";
     }
     
+                        /*!
+                        *\brief 
+     * Checks if given character is a valid character
+     * */
     static bool isCharacter(char c) {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
     
+                        /*!
+                        *\brief 
+     * Reverses a string, obviously
+     * */
     static string ReverseStr(string str) {
         string temp;
         
@@ -232,6 +403,10 @@ private:
         return temp;
     }
     
+                        /*!
+                        *\brief 
+     * Checks if all braces are of even count
+     * */
     bool validateBraces(string str) {
         int bracesCounter = 0;
         
@@ -242,6 +417,10 @@ private:
         return (bracesCounter % 2 == 0);
     }
     
+                        /*!
+                        *\brief 
+     * Checks if all double quotes are of even count
+     * */
     bool validateQuotes(string str) {
         int quotesCounter = 0;
         
@@ -252,6 +431,11 @@ private:
         return (quotesCounter % 2 == 0);
     }
     
+                        /*!
+                        *\brief 
+     * Checks if a string is valid by using the isCharacter function (the string should)
+     * consist only of letters.
+     * */
     bool validateValue(const string& str) {
         
         for (int i = 0; i < str.length(); i++)
@@ -262,6 +446,13 @@ private:
     }
     
 public:
+
+                        /*!
+                        *\brief 
+     * Uses methods that start with the "serialize" substring
+     * in order to serialize the whole JsonInfo class 
+     * (parse it in a json file)
+     * */
     static void serializeJsonInfo(JsonInfo& jsonInfo, string path) {
         bool isLast = false;
         std::ofstream outputFile(path);
@@ -299,6 +490,16 @@ public:
         return;
     }
     
+                        /*!
+                        *\brief 
+     * Takes a given path and by following the json structure
+     * extracts all the data from the provided path 
+     * based on a predefined (by the classes) structure
+     * */
+
+                        /**@returns 
+     * 
+     * */
     static JsonInfo parseJsonFile(const string& filePath) {
         JsonInfo jsonInfo;
         jsonInfo.fileName = filePath;
@@ -460,10 +661,15 @@ public:
         
         return jsonInfo;
     }
-    
-    
+    /*
+     *
+     * deletes an entry in the private attributes of the JsonInfo class, based on a given key
+     * ,only the first occurrence is deleted
+     * it works by traversing all the JsonInfo object's private attributes and 
+     * searching for the given key.
+     */
     static bool deleteEntryByKey(JsonInfo& jsonInfo, string key) {
-        // delete only first occurence as there can be multiple key-value pairs with the same key
+        // delete only first occurrence as there can be multiple key-value pairs with the same key
         // Delete from key-values
         
         char delimeter = '/';
@@ -530,6 +736,12 @@ public:
         return false;
     }
     
+                        /*!
+                        *\brief 
+     * This method traverses all private attributes of the JsonInfo object 
+     * in order to find ALL occurrences of the given string
+     * it then prints it to the console
+     * */
    static void searchElement(JsonInfo& object, string str) {
         string result;
         string temp;
@@ -599,6 +811,10 @@ public:
         cout << result << endl;
     }
     
+                        /*!
+                        *\brief 
+     * The following function prints all the data inside the JsonInfo Object
+     * */
     static void print(JsonInfo& jsonInfo) {
         cout << "File Name: " << jsonInfo.fileName << endl;
         
@@ -629,7 +845,11 @@ public:
     }
     
 
-    
+                        /*!
+                        *\brief 
+     * This function validates the Json structure of the JSON file that we receive as input
+     * in our main function
+     * */
     static bool validate(JsonInfo& jsonInfo, const string& filePath) {
         
         // possible fix -> don't read from file / build string from JsonInfo class
@@ -649,6 +869,13 @@ public:
         return (jsonInfo.validateBraces(str) && jsonInfo.validateQuotes(str));
     }
     
+                        /*!
+                        *\brief 
+     * This method traverses all member attributes of the JsonInfo class 
+     * in order to find if a given KVP, Array or JsonObject exists.
+     * If the path to the attribute is invalid, it prints a proper message
+     * to inform the user of it's non-existence.
+     * */
     static bool find(JsonInfo& jsonInfo, string str) {
         int res;
         for (const auto& kvp : jsonInfo.keyValues) {
@@ -698,6 +925,13 @@ public:
         return false;
     }
     
+                        /*!
+                        *\brief 
+     * This method sets the value of a given KVP, that it finds
+     * by the the splitting the given path by a delimeter (if needed)
+     * and "mapping" it through the JsonInfo object in order to find 
+     * the corresponding KVP and set the new value
+     * */
     static bool set(JsonInfo& object, string path, string value) {
         // set only the first occurence of the key
         // as it's thought to be unique given it's path.
@@ -754,7 +988,14 @@ public:
     }
     
 
-    
+                        /*!
+                        *\brief 
+     * Method used to create a new KVP and add it to the JsonInfo Object.
+     * It works by first validating the key given (it should only contain letters)
+     * and then searches through the JsonInfo object for the given key.
+     * If the key already exists, it informs the user of it's existence.
+     * If not, then a new KVP is added to the JsonInfo object.
+     * */
     static bool create(JsonInfo& object, string path, string key, string value) {
         
         char delimeter = '/';
@@ -829,7 +1070,14 @@ public:
     
 
     
- 
+                     /*!
+                     *\brief 
+     * Method that takes data from one path and pastes it on another place.
+     * for example: management/directorId and offices/name, then the
+     * directorId KVP will be taken from it's old path and set to the new one.
+     * (by means of the JsonInfo's object structure, the directorId
+     * KVP is deleted from its old path and set to the offices/... path)
+     * */
     static void move(JsonInfo& object, string path, string newPath) {
         
         char delimeter = '/';
@@ -923,7 +1171,12 @@ public:
         
     }
     
-    
+                        /*!
+                        *\brief 
+     * Saves the already manipulated JsonInfo object as a *.json file
+     * if a filepath is not provided, it is then overwritten in the 
+     * default path that is given when the function is called.
+     * */
     static void save(JsonInfo& object, string filePath, string defaultPath) {
         
         //
