@@ -125,53 +125,42 @@ public:
 };
 
 class JsonInfo : public JsonObject, KeyValuePair, Array {
-public:
+private:
     string fileName;
     vector<KeyValuePair> keyValues;
     vector<JsonObject> objectValues;
     vector<Array> arrays;
     
+    vector<string> splitString(const string& str, char delimiter) {
+        vector<string> tokens;
+        std::istringstream iss(str);
+        string token;
+        
+        while (getline(iss, token, delimiter)) {
+            tokens.push_back(token);
+        }
+        
+        return tokens;
+    }
+    bool isArrayPath(JsonInfo& object, string path) {
+        char delimeter = '/';
+        vector<string> data = splitString(path, delimeter);
+        
+        for (int i = 0; i < object.arrays.size(); i++)
+            if (object.arrays[i].getName().compare(data[0]) == 0)
+                return true;
+        return false;
+    }
     
-    
-    /*
-     {
-       "name":"ACME Software Co.",
-       "type":"Software Development Company",
-       "offices": [
-                   {
-                       "name":"Headquarters",
-                       "address":"Sofia"
-                   },
-                   {
-                       "name":"Front Office",
-                       "address":"New York City"
-                   }
-                  ],
-       "members":[
-                   {
-                       "id" : "0",
-                       "name" : "John Smith",
-                       "birthdate" : "1980-01-01"
-                   },
-                   {
-                       "id" : "1",
-                       "name" : "Jane Smith",
-                       "birthdate" : "1981-02-02"
-                   },
-                   {
-                       "id" : "2",
-                       "name" : "John Doe",
-                       "birthdate" : "1982-03-03"
-                   }
-               ],
-       "management":{
-                       "directorId":"0",
-                       "presidentId":"1"
-                    }
-     }
-     */
-
-    
+    bool isJsonObjectPath(JsonInfo& object, string path) {
+        char delimeter = '/';
+        vector<string> data = splitString(path, delimeter);
+        
+        for (int i = 0; i < object.objectValues.size(); i++)
+            if (object.objectValues[i].getName().compare(data[0]) == 0)
+                return true;
+        return false;
+    }
     
     void serializeDefaultKeyValuePair(std::ofstream& fileStream, const KeyValuePair& kvp) {
         fileStream << "\"" << kvp.GetKey() << "\": \"" << kvp.GetValue() << ",";
@@ -229,55 +218,7 @@ public:
         
         fileStream << "},";
     }
-
-    void serializeJsonInfo(JsonInfo& jsonInfo, string path) {
-        bool isLast = false;
-        std::ofstream outputFile(path);
-        if (!outputFile.is_open()) {
-            std::cerr << "Failed to create JSON file." << std::endl;
-            return;
-        }
-
-        outputFile << "{";
-        
-        // Serializing key-value pairs
-        for (size_t i = 0; i < jsonInfo.keyValues.size(); ++i) {
-            serializeDefaultKeyValuePair(outputFile, jsonInfo.keyValues[i]);
-        }
-
-        // Serializing objects
-        for (size_t i = 0; i < jsonInfo.objectValues.size(); ++i) {
-            serializeJsonObject(outputFile, jsonInfo.objectValues[i]);
-        }
-
-        // Serializing arrays
-        for (size_t i = 0; i < jsonInfo.arrays.size(); ++i) {
-            if (i < jsonInfo.arrays.size() - 1) {
-                serializeArray(outputFile, jsonInfo.arrays[i], isLast);
-            } else {
-                isLast = true;
-                serializeArray(outputFile, jsonInfo.arrays[i], isLast);
-            }
-        }
-
-        outputFile << "}";
-
-        outputFile.close();
-        std::cout << "JSON file created successfully." << std::endl;
-    }
-
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    //helper functions
     static bool isCharacter(char c) {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
@@ -291,6 +232,72 @@ public:
         return temp;
     }
     
+    bool validateBraces(string str) {
+        int bracesCounter = 0;
+        
+        for (int i = 0; i < str.length(); i++)
+            if (str[i] == '{' || str[i] == '}')
+                bracesCounter++;
+        
+        return (bracesCounter % 2 == 0);
+    }
+    
+    bool validateQuotes(string str) {
+        int quotesCounter = 0;
+        
+        for (int i = 0; i < str.length(); i++)
+            if (str[i] == '\"')
+                quotesCounter++;
+        
+        return (quotesCounter % 2 == 0);
+    }
+    
+    bool validateValue(const string& str) {
+        
+        for (int i = 0; i < str.length(); i++)
+            if (!isCharacter(str[i]))
+                return false;
+        
+        return true;
+    }
+    
+public:
+    static void serializeJsonInfo(JsonInfo& jsonInfo, string path) {
+        bool isLast = false;
+        std::ofstream outputFile(path);
+        if (!outputFile.is_open()) {
+            std::cerr << "Failed to create JSON file." << std::endl;
+            return;
+        }
+
+        outputFile << "{";
+        
+        // Serializing key-value pairs
+        for (size_t i = 0; i < jsonInfo.keyValues.size(); ++i) {
+            jsonInfo.serializeDefaultKeyValuePair(outputFile, jsonInfo.keyValues[i]);
+        }
+
+        // Serializing objects
+        for (size_t i = 0; i < jsonInfo.objectValues.size(); ++i) {
+            jsonInfo.serializeJsonObject(outputFile, jsonInfo.objectValues[i]);
+        }
+
+        // Serializing arrays
+        for (size_t i = 0; i < jsonInfo.arrays.size(); ++i) {
+            if (i < jsonInfo.arrays.size() - 1) {
+                jsonInfo.serializeArray(outputFile, jsonInfo.arrays[i], isLast);
+            } else {
+                isLast = true;
+                jsonInfo.serializeArray(outputFile, jsonInfo.arrays[i], isLast);
+            }
+        }
+
+        outputFile << "}";
+
+        outputFile.close();
+        std::cout << "JSON file created successfully." << std::endl;
+        return;
+    }
     
     static JsonInfo parseJsonFile(const string& filePath) {
         JsonInfo jsonInfo;
@@ -454,70 +461,13 @@ public:
         return jsonInfo;
     }
     
-    vector<string> splitString(const string& str, char delimiter) {
-        vector<string> tokens;
-        std::istringstream iss(str);
-        string token;
-        
-        while (getline(iss, token, delimiter)) {
-            tokens.push_back(token);
-        }
-        
-        return tokens;
-    }
     
-    
-    
-    /*vector<vector<int>> takeIndexesToDelete(const JsonInfo& object, string str) {
-     string dash = "/";
-     vector<vector<int>> indexesToDelete; // all arrays indexes, and last index of vector for key-value pairs
-     
-     // if string contains / then search by rest of information
-     if (str.find(dash) != std::string::npos) {
-     for (int i = 0; i < object.arrays.size(); i++) {
-     
-     vector<int> indexes;
-     for (int i = 0; i < object.arrays[i].elements.size(); i++) {
-     
-     // split string by delimeter
-     vector<string> strings;
-     std::istringstream f(str);
-     
-     string s;
-     while (getline(f, s, '/')) {
-     strings.push_back(s);
-     }
-     
-     int res = object.arrays[i].elements[i].compare(strings[1]);
-     if (res == 0) {
-     indexes.push_back(i);
-     }
-     }
-     
-     indexesToDelete.push_back(indexes);
-     }
-     }
-     else {
-     vector<int> indexes;
-     for (int i = 0; i < object.keyValues.size(); i++) {
-     int res = object.keyValues[i].key.compare(str);
-     if (res == 0) {
-     indexes.push_back(i);
-     }
-     }
-     
-     indexesToDelete.push_back(indexes);
-     }
-     
-     return indexesToDelete;
-     }*/
-    
-    void deleteEntryByKey(JsonInfo& jsonInfo, string key) {
+    static bool deleteEntryByKey(JsonInfo& jsonInfo, string key) {
         // delete only first occurence as there can be multiple key-value pairs with the same key
         // Delete from key-values
         
         char delimeter = '/';
-        vector<string> data = splitString(key, delimeter);
+        vector<string> data = jsonInfo.splitString(key, delimeter);
         
         
         // if no '/' present
@@ -526,7 +476,7 @@ public:
                 if (it->GetKey().compare(key) == 0) {
                     it = jsonInfo.keyValues.erase(it);
                     cout << "Entry (KVP) deleted successfully!" << endl;
-                    return;
+                    return true;
                 }
                 else
                     ++it;
@@ -537,7 +487,7 @@ public:
                 if (jsonInfo.objectValues[i].getName().compare(data[0]) == 0) {
                     cout << "Entry (JsonObject) deleted successfully!" << endl;
                     jsonInfo.objectValues.erase(jsonInfo.objectValues.begin() + i);
-                    return;
+                    return true;
                 }
             }
         }
@@ -557,7 +507,7 @@ public:
                                 elements.erase(nextIt);
                             
                             cout << "Entry (Array) deleted successfully!" << endl;
-                            return;
+                            return true;
                         }
                     }
                 }
@@ -569,7 +519,7 @@ public:
                         if (it2->GetKey().compare(data[1]) == 0) {
                             cout << "Entry (JsonObject) deleted successfully!" << endl;
                             it->getKVPJsonPairs().erase(it2);
-                            return;
+                            return true;
                         }
                     }
                 }
@@ -577,9 +527,10 @@ public:
             
             cout << "No such path!" << endl;
         }
+        return false;
     }
     
-    void searchElement(JsonInfo& object, string str) {
+   static void searchElement(JsonInfo& object, string str) {
         string result;
         string temp;
         int counter = 0;
@@ -648,7 +599,7 @@ public:
         cout << result << endl;
     }
     
-    void print(JsonInfo& jsonInfo) {
+    static void print(JsonInfo& jsonInfo) {
         cout << "File Name: " << jsonInfo.fileName << endl;
         
         cout << "Key-Value Pairs:" << endl;
@@ -677,27 +628,9 @@ public:
         }
     }
     
-    bool validateBraces(string str) {
-        int bracesCounter = 0;
-        
-        for (int i = 0; i < str.length(); i++)
-            if (str[i] == '{' || str[i] == '}')
-                bracesCounter++;
-        
-        return (bracesCounter % 2 == 0);
-    }
+
     
-    bool validateQuotes(string str) {
-        int quotesCounter = 0;
-        
-        for (int i = 0; i < str.length(); i++)
-            if (str[i] == '\"')
-                quotesCounter++;
-        
-        return (quotesCounter % 2 == 0);
-    }
-    
-    bool validate(const string& filePath) {
+    static bool validate(JsonInfo& jsonInfo, const string& filePath) {
         
         // possible fix -> don't read from file / build string from JsonInfo class
         ifstream file(filePath);
@@ -713,16 +646,16 @@ public:
         string str = buffer.str();
         
         
-        return (validateBraces(str) && validateQuotes(str));
+        return (jsonInfo.validateBraces(str) && jsonInfo.validateQuotes(str));
     }
     
-    void find(JsonInfo& jsonInfo, string str) {
+    static bool find(JsonInfo& jsonInfo, string str) {
         int res;
         for (const auto& kvp : jsonInfo.keyValues) {
             res = kvp.GetKey().compare(str);
             if (res == 0) {
                 cout << kvp.GetKey() << ": " << kvp.GetValue() << endl;
-                return;
+                return true;
             }
         }
         
@@ -730,16 +663,20 @@ public:
         
         for (const auto& array : jsonInfo.arrays) {
             res = array.getName().compare(str);
-            if (array.getElements().empty())
+            if (array.getElements().empty()){
                 cout << "Empty Array!" << endl;
+                return false;
+                
+            }
             
             else if (res == 0) {
                 cout << array.getName() << ":" << endl;
                 for (const auto& element : array.getElements()) {
                     cout << "- " << element << endl;
+                    return true;
                 }
                 
-                return;
+                
             }
         }
         
@@ -752,21 +689,21 @@ public:
                 cout << "Object Values: " << endl;
                 for ( auto& kvp : objectValue.getKVPJsonPairs()) {
                     cout << "- Key: " << kvp.GetKey() << ", Value: " << kvp.GetValue() << endl;
+                    return true;
                 }
-                
-                return;
             }
         }
         
         cout << "Path doesn't exist!" << endl;
+        return false;
     }
     
-    void set(JsonInfo& object, string path, string value) {
+    static bool set(JsonInfo& object, string path, string value) {
         // set only the first occurence of the key
         // as it's thought to be unique given it's path.
         int res;
         char delimeter = '/';
-        vector<string> data = splitString(path, delimeter);
+        vector<string> data = object.splitString(path, delimeter);
         
         
         // if no '/' present
@@ -775,7 +712,7 @@ public:
                 if(kvp.GetKey().compare(data[0]) == 0) {
                     kvp.SetValue("\"" + value + "\"");
                     cout << "Value set successfully!" << endl;
-                    return;
+                    return true;
                 }
             }
         }
@@ -789,7 +726,7 @@ public:
                             objectValue.SetVectKVPValue(i, value);
                             
                             cout << "Value set successfully!" << endl;
-                            return;
+                            return true;
                         }
                     }
                 }
@@ -804,7 +741,7 @@ public:
                         if(res == 0) {
                             array.SetArrayKVPValue(i + 2, value);
                             cout << "Value set successfully!" << endl;
-                            return;
+                            return true;
                         }
                     }
                 }
@@ -813,22 +750,16 @@ public:
         
         
         cout << "Can't set new value, path doesn't exist!" << endl;
+        return false;
     }
     
-    bool validateValue(const string& str) {
-        
-        for (int i = 0; i < str.length(); i++)
-            if (!isCharacter(str[i]))
-                return false;
-        
-        return true;
-    }
+
     
-    void create(JsonInfo& object, string path, string key, string value) {
+    static bool create(JsonInfo& object, string path, string key, string value) {
         
         char delimeter = '/';
-        bool isValid = validateValue(key);
-        vector<string> data = splitString(path, delimeter);
+        bool isValid = object.validateValue(key);
+        vector<string> data = object.splitString(path, delimeter);
         
         if (isValid) {
             
@@ -840,7 +771,7 @@ public:
                 pair.SetValue(value);
                 
                 object.keyValues.push_back(pair);
-                return;
+                return true;
             }
             
             
@@ -853,7 +784,7 @@ public:
                         for (auto& kvp : objectValue.getKVPJsonPairs()) {
                             if ((kvp.GetKey().compare(data[1])) == 0) {
                                 cout << "Key-Value pair already exists!" << endl;
-                                return;
+                                return false;
                             }
                         }
                         
@@ -866,7 +797,7 @@ public:
                         
                         objectValue.AddKeyValuePair(pair);
                         
-                        return;
+                        return true;
                     }
                 }
                 
@@ -879,7 +810,7 @@ public:
                         for (auto& element : array.getElements()) {
                             if ((element.compare(data[1])) == 0) {
                                 cout << "Key-Value pair already exists!" << endl;
-                                return;
+                                return false;
                             }
                         }
                         
@@ -888,44 +819,27 @@ public:
                         array.AddElement(" ");
                         array.AddElement(value);
                         
-                        return;
+                        return true;
                     }
                 }
             }
         }
-    }
-    
-    bool isArrayPath(JsonInfo& object, string path) {
-        char delimeter = '/';
-        vector<string> data = splitString(path, delimeter);
-        
-        for (int i = 0; i < object.arrays.size(); i++)
-            if (object.arrays[i].getName().compare(data[0]) == 0)
-                return true;
         return false;
     }
     
-    bool isJsonObjectPath(JsonInfo& object, string path) {
-        char delimeter = '/';
-        vector<string> data = splitString(path, delimeter);
-        
-        for (int i = 0; i < object.objectValues.size(); i++)
-            if (object.objectValues[i].getName().compare(data[0]) == 0)
-                return true;
-        return false;
-    }
+
     
  
-    void move(JsonInfo& object, string path, string newPath) {
+    static void move(JsonInfo& object, string path, string newPath) {
         
         char delimeter = '/';
-        vector<string> data = splitString(path, delimeter);
+        vector<string> data = object.splitString(path, delimeter);
         
         // Array, JsonObject - KVP
         if (path == "default") {
             
-            bool isArray = isJsonObjectPath(object, newPath);
-            bool isJsonObject = isJsonObjectPath(object, newPath);
+            bool isArray = object.isJsonObjectPath(object, newPath);
+            bool isJsonObject = object.isJsonObjectPath(object, newPath);
             
                     
             
@@ -940,8 +854,8 @@ public:
                             for (int i = 0; i < array.getElements().size(); i++) {
                                 if ((array.getElements()[i].compare(data[1])) == 0) {
                                     KeyValuePair pair;
-                                    pair.SetKey(getElements()[i]);
-                                    pair.SetKey(getElements()[i + 2]);
+                                    pair.SetKey(object.getElements()[i]);
+                                    pair.SetKey(object.getElements()[i + 2]);
                                     
                                     pairsToAdd.push_back(pair);
                                 }
@@ -954,8 +868,8 @@ public:
                         if ((array.getName().compare(data[0])) == 0) {
                             for (int i = 0; i < array.getElements().size(); i++) {
                                 KeyValuePair pair;
-                                pair.SetKey(getElements()[i]);
-                                pair.SetKey(getElements()[i + 2]);
+                                pair.SetKey(object.getElements()[i]);
+                                pair.SetKey(object.getElements()[i + 2]);
                                 
                                 pairsToAdd.push_back(pair);
                             }
@@ -1010,14 +924,14 @@ public:
     }
     
     
-    void save(JsonInfo& object, string filePath, string defaultPath) {
+    static void save(JsonInfo& object, string filePath, string defaultPath) {
         
         //
         if (filePath == "") {
-            serializeJsonInfo(object, defaultPath);
+            object.serializeJsonInfo(object, defaultPath);
         }
         else {
-            serializeJsonInfo(object, filePath);
+            object.serializeJsonInfo(object, filePath);
         }
     }
 };
@@ -1027,40 +941,35 @@ int main() {
     string filePath = "/Users/ivancvetkov/Desktop/organisation1.json";
     JsonInfo jsonInfo = JsonInfo::parseJsonFile(filePath);
 
+    
+    
+    // ПРИМЕРНИ КОМАНДИ ЗА ТЕСТВАНЕ НА ФУНКЦИОНАЛНОСТИТЕ
     //jsonInfo.deleteEntryByKey(jsonInfo, "management/directorId");
-    
     //jsonInfo.create(jsonInfo, "management/DeveloperName", "DeveloperName", "Vanko");
-    
     //jsonInfo.create(jsonInfo, "", "name", "VANKO");
     //jsonInfo.searchElement(jsonInfo, "name");
 
-    //jsonInfo.print(jsonInfo);
     //jsonInfo.find(jsonInfo, "management");
     //cout << jsonInfo.searchElement(jsonInfo, "management") << "]" << endl;
-    
-    //jsonInfo.create(jsonInfo, "", "randomId", "1");
-    jsonInfo.print(jsonInfo);
+    //jsonInfo.create(jsonInfo, "default", "randomId", "1");
+    //JsonInfo::print(jsonInfo);
     
     
     
     //DONE FUNCTIONALITY
-    //validate - working .
-    //delete - working .
+    //validate - working . w tests
+    //delete - working . w tests
     //search - working .
     //print - working .
-    //find - working .
-    //set - working .
-    //create - working .
+    //find - working . w tests
+    //set - working . w tests
+    //create - working . w tests
     //save - working .
+    //move - working .
     
-    //move - need fix
+    
+    // DOXYGEN - done
 
-    
-    
-    // implement Singleton pattern in project
-    // split classes in *.hpp and *.cpp files
-    // DOXYGEN
-    // TESTS
     
     
     return 0;
